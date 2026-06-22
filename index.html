@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WordMaster - 高中英文背單字系統</title>
+    <style>
+        /* 基礎全域樣式：採用高質感微光暗黑風 */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121214;
+            color: #e2e8f0;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: #6366f1;
+            margin-bottom: 10px;
+        }
+
+        /* 導覽按鈕 */
+        .nav-container {
+            margin-bottom: 30px;
+        }
+        .btn {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin: 0 5px;
+        }
+        .btn:hover { background-color: #1d4ed8; }
+        .btn-secondary { background-color: #4b5563; }
+        .btn-secondary:hover { background-color: #374151; }
+        .btn-success { background-color: #059669; }
+        .btn-success:hover { background-color: #047857; }
+
+        /* 頁面切換控制 */
+        .page { display: none; width: 100%; max-width: 500px; }
+        .active-page { display: block; }
+
+        /* --- 單字卡 翻頁效果 CSS --- */
+        .card-container {
+            perspective: 1000px;
+            width: 100%;
+            height: 300px;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+        .word-card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        /* 點擊後翻轉 180 度 */
+        .word-card.flipped {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 16px;
+            padding: 24px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            border: 1px solid #334155;
+        }
+        /* 卡片正面（英文） */
+        .card-front {
+            background-color: #1e293b;
+            color: #f8fafc;
+        }
+        .card-front .word {
+            font-size: 36px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .card-front .hint {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-top: 15px;
+        }
+        /* 卡片背面（中文翻譯詳細資訊） */
+        .card-back {
+            background-color: #0f172a;
+            color: #f1f5f9;
+            transform: rotateY(180deg);
+            align-items: flex-start;
+            justify-content: flex-start;
+            overflow-y: auto;
+        }
+        .card-back h2 {
+            font-size: 28px;
+            color: #38bdf8;
+            margin: 0 0 10px 0;
+        }
+        .tag {
+            background-color: #334155;
+            color: #38bdf8;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .detail-item {
+            margin-top: 12px;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        .detail-label {
+            color: #94a3b8;
+            font-weight: bold;
+        }
+
+        /* 表單與管理頁面樣式 */
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            margin-bottom: 5px;
+            color: #94a3b8;
+        }
+        .form-group input, .form-group textarea {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 10px;
+            color: white;
+            font-size: 16px;
+        }
+        .form-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .form-row input { flex: 1; }
+    </style>
+</head>
+<body>
+
+    <h1>WordMaster 🗂️</h1>
+    
+    <div class="nav-container">
+        <button class="btn" onclick="switchPage('study-page')">字卡複習</button>
+        <button class="btn btn-secondary" onclick="switchPage('admin-page')">管理頁面</button>
+    </div>
+
+    <div id="study-page" class="page active-page">
+        <div class="card-container" onclick="toggleFlip()">
+            <div class="word-card" id="flashcard">
+                <div class="card-face card-front">
+                    <div class="word" id="front-word">repository</div>
+                    <div class="hint">💡 點擊卡片翻面</div>
+                </div>
+                <div class="card-face card-back">
+                    <h2 id="back-translation">儲存庫</h2>
+                    <div><span class="tag" id="back-partOfSpeech">n.</span></div>
+                    <div class="detail-item">
+                        <span class="detail-label">例句：</span>
+                        <span id="back-example">GitHub is a web-based repository for code.</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">字根分析：</span>
+                        <span id="back-roots">re- (往後) + posit (放置) + -ory (場所)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; width: 100%;">
+            <button class="btn btn-secondary" onclick="prevWord()">⏮️ 上一個</button>
+            <button class="btn btn-secondary" onclick="nextWord()">下一個 ⏭️</button>
+        </div>
+    </div>
+
+    <div id="admin-page" class="page">
+        <h3>新增單字資料</h3>
+        
+        <div class="form-group">
+            <label>英文單字</label>
+            <div class="form-row">
+                <input type="text" id="input-word" placeholder="例如: checkout">
+                <button class="btn btn-success" onclick="autoFillData()">🪄 自動填入</button>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>中文翻譯</label>
+            <input type="text" id="input-translation" placeholder="例如: 切換/檢出">
+        </div>
+
+        <div class="form-group">
+            <label>詞性</label>
+            <input type="text" id="input-pos" placeholder="例如: v. / n.">
+        </div>
+
+        <div class="form-group">
+            <label>例句</label>
+            <textarea id="input-example" rows="2" placeholder="輸入英文例句..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>字根分析</label>
+            <input type="text" id="input-roots" placeholder="例如: 字首、字根拆解說明">
+        </div>
+
+        <button class="btn" style="width:100%; margin-top:10px;" onclick="saveWord()">💾 儲存單字</button>
+    </div>
+
+    <script>
+        // 1. 初始化內建單字庫數據 (預設提供講義中的三個重要 Git 術語)
+        let wordDatabase = [
+            {
+                word: "repository",
+                translation: "儲存庫 / 專案的家",
+                partOfSpeech: "n.",
+                example: "Repositories contain a project's files and version history.",
+                roots: "re- (重複/向後) + posit (放置) + -ory (場所)"
+            },
+            {
+                word: "commit",
+                translation: "提交 / 本地存檔",
+                partOfSpeech: "v. / n.",
+                example: "Remember to commit your changes with a clear message.",
+                roots: "com- (共同) + mit (送出) -> 交付/安全存入"
+            },
+            {
+                word: "checkout",
+                translation: "切換版本 / 觀察過去",
+                partOfSpeech: "v.",
+                example: "You can checkout any historical commit to view past code safely.",
+                roots: "check (檢查) + out (出來) -> 檢出並查看"
+            }
+        ];
+
+        let currentIndex = 0;
+
+        // 2. 頁面切換控制
+        function switchPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active-page'));
+            document.getElementById(pageId).classList.add('active-page');
+            // 切換頁面時將卡片翻回正面
+            document.getElementById('flashcard').classList.remove('flipped');
+        }
+
+        // 3. 卡片翻轉功能
+        function toggleFlip() {
+            document.getElementById('flashcard').classList.toggle('flipped');
+        }
+
+        // 4. 更新卡片畫面內容
+        function updateCardDisplay() {
+            const card = document.getElementById('flashcard');
+            card.classList.remove('flipped'); // 先翻回正面再換字
+            
+            setTimeout(() => {
+                const currentData = wordDatabase[currentIndex];
+                document.getElementById('front-word').innerText = currentData.word;
+                document.getElementById('back-translation').innerText = currentData.translation;
+                document.getElementById('back-partOfSpeech').innerText = currentData.partOfSpeech;
+                document.getElementById('back-example').innerText = currentData.example;
+                document.getElementById('back-roots').innerText = currentData.roots;
+            }, 200); // 微調延遲讓換字視覺更流暢
+        }
+
+        function nextWord() {
+            if (wordDatabase.length === 0) return;
+            currentIndex = (currentIndex + 1) % wordDatabase.length;
+            updateCardDisplay();
+        }
+
+        function prevWord() {
+            if (wordDatabase.length === 0) return;
+            currentIndex = (currentIndex - 1 + wordDatabase.length) % wordDatabase.length;
+            updateCardDisplay();
+        }
+
+        // 5. 管理頁面：自動填入按鈕功能 (模擬 API 呼叫)
+        function autoFillData() {
+            const word = document.getElementById('input-word').value.trim().toLowerCase();
+            if (!word) {
+                alert("請先輸入英文單字！");
+                return;
+            }
+
+            // 這裡模擬呼叫字典 API 的回傳效果，你可以自行擴充 fetch()
+            if (word === "push") {
+                document.getElementById('input-translation').value = "同步 / 雲端備份";
+                document.getElementById('input-pos').value = "v.";
+                document.getElementById('input-example').value = "Push your local changes to synchronization with the GitHub server.";
+                document.getElementById('input-roots').value = "源自古英語 pucian (推)，此處指推送到雲端";
+            } else if (word === "branch") {
+                document.getElementById('input-translation').value = "分支 / 平行宇宙";
+                document.getElementById('input-pos').value = "n.";
+                document.getElementById('input-example').value = "Create a feature branch to work safely without disturbing the main line.";
+                document.getElementById('input-roots').value = "原意為樹枝，程式中引申為平行的開發宇宙";
+            } else {
+                // 通用生成範本
+                document.getElementById('input-translation').value = `[自動查驗] ${word} 的中文意思`;
+                document.getElementById('input-pos').value = "v./n.";
+                document.getElementById('input-example').value = `This is an automatically generated example sentence containing "${word}".`;
+                document.getElementById('input-roots').value = "待進一步分析字根組成";
+            }
+        }
+
+        // 6. 管理頁面：儲存單字至陣列中
+        function saveWord() {
+            const word = document.getElementById('input-word').value.trim();
+            const translation = document.getElementById('input-translation').value.trim();
+            const partOfSpeech = document.getElementById('input-pos').value.trim();
+            const example = document.getElementById('input-example').value.trim();
+            const roots = document.getElementById('input-roots').value.trim();
+
+            if (!word || !translation) {
+                alert("單字與中文翻譯為必填欄位！");
+                return;
+            }
+
+            // 新增至記憶體資料庫
+            wordDatabase.push({ word, translation, partOfSpeech, example, roots });
+            
+            alert(`單字「${word}」已成功新增！`);
+            
+            // 清空輸入欄位
+            document.getElementById('input-word').value = "";
+            document.getElementById('input-translation').value = "";
+            document.getElementById('input-pos').value = "";
+            document.getElementById('input-example').value = "";
+            document.getElementById('input-roots').value = "";
+
+            // 自動跳轉回主頁，方便查看剛加入的新字
+            currentIndex = wordDatabase.length - 1;
+            updateCardDisplay();
+            switchPage('study-page');
+        }
+
+        // 初始化第一次顯示
+        updateCardDisplay();
+    </script>
+</body>
+</html>
